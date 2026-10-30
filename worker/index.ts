@@ -60,6 +60,7 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
+// Meta Webhook Verification Handshake (GET)
     if (request.method === "GET") {
       const mode = url.searchParams.get("hub.mode");
       const token = url.searchParams.get("hub.verify_token");
@@ -70,7 +71,10 @@ export default {
       if (mode === "subscribe" && token === verifyToken && challenge) {
         return new Response(challenge, {
           status: 200,
-          headers: { "Content-Type": "text/plain" },
+          headers: { 
+            "Content-Type": "text/plain; charset=utf-8",
+            "Cache-Control": "no-cache"
+          },
         });
       }
       return new Response("Forbidden", { status: 403 });
