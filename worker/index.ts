@@ -1,7 +1,7 @@
 import {
   WorkflowEntrypoint,
-  WorkflowStep,
-  WorkflowEvent,
+  type WorkflowStep,
+  type WorkflowEvent,
 } from "cloudflare:workers";
 
 type WorkflowPayload = {
@@ -13,7 +13,7 @@ export interface Env {
   APPS_SCRIPT_URL?: string;
 }
 
-// 1. Workflow Definition with explicit parameter types
+// 1. Workflow Definition
 export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPayload> {
   async run(event: WorkflowEvent<WorkflowPayload>, step: WorkflowStep): Promise<void> {
     const { payload } = event.payload;
@@ -37,7 +37,7 @@ export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPay
   }
 }
 
-// 2. HTTP Fetch Handler with explicit types
+// 2. HTTP Fetch Handler
 export default {
   async fetch(
     request: Request,
