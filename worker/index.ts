@@ -25,8 +25,8 @@ export interface Env {
   VERIFY_TOKEN?: string;
 }
 
-// Workflow Definition
-export class MyWorkflow extends WorkflowEntrypoint<Env, WorkflowPayload> {
+// 1. Workflow Definition: Name matches class_name in wrangler.json
+export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPayload> {
   async run(event: WorkflowEvent<WorkflowPayload>, step: WorkflowStep): Promise<void> {
     const { payload } = event.payload;
 
@@ -49,7 +49,7 @@ export class MyWorkflow extends WorkflowEntrypoint<Env, WorkflowPayload> {
   }
 }
 
-// HTTP Fetch Handler
+// 2. HTTP Fetch Handler
 export default {
   async fetch(
     request: Request,
