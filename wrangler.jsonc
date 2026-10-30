@@ -9,6 +9,10 @@
   },
   "observability": {
     "enabled": true
+  }, 
+  "vars": {
+    "APPS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbxH-Gm7-psKpEYJRl15rFPxAXEWmTiSL158GTG2tsIieqvEgW4ltTxpP3YMSe5926uy/exec",
+    "VERIFY_TOKEN": "platina_dental_call_blueee"
   },
   "workflows": [
     {
