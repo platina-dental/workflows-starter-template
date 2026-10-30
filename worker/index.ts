@@ -1,29 +1,20 @@
 import {
+  DurableObject,
   WorkflowEntrypoint,
   type WorkflowStep,
   type WorkflowEvent,
 } from "cloudflare:workers";
 
-// Satisfies Cloudflare's existing Durable Object check from the starter template
-// worker/index.ts
-
-export class WorkflowStatusDO {
-  state: DurableObjectState;
-
-  constructor(state: DurableObjectState) {
-    this.state = state;
+export class WorkflowStatusDO extends DurableObject {
+  async updateStep(_stepName?: string, _status?: string): Promise<void> {
+    // no-op
   }
 
-  // Satisfies the call in worker/workflow.ts line 30
-  async updateStep(stepName: string, status?: string): Promise<void> {
-    // No-op or record state
+  async setStatus(_status?: string): Promise<void> {
+    // no-op
   }
 
-  async setStatus(status: string): Promise<void> {
-    // No-op
-  }
-
-  async fetch(request: Request): Promise<Response> {
+  override async fetch(_request: Request): Promise<Response> {
     return new Response("OK");
   }
 }
@@ -38,7 +29,6 @@ export interface Env {
   VERIFY_TOKEN?: string;
 }
 
-// 1. Workflow Definition: Name matches class_name in wrangler.json
 export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPayload> {
   async run(event: WorkflowEvent<WorkflowPayload>, step: WorkflowStep): Promise<void> {
     const { payload } = event.payload;
@@ -62,7 +52,6 @@ export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPay
   }
 }
 
-// 2. HTTP Fetch Handler
 export default {
   async fetch(
     request: Request,
@@ -71,7 +60,6 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
-    // Meta Webhook Verification Handshake (GET)
     if (request.method === "GET") {
       const mode = url.searchParams.get("hub.mode");
       const token = url.searchParams.get("hub.verify_token");
@@ -88,7 +76,6 @@ export default {
       return new Response("Forbidden", { status: 403 });
     }
 
-    // Incoming WhatsApp Messages & Receipts (POST)
     if (request.method === "POST") {
       try {
         const body = (await request.json()) as Record<string, unknown>;
