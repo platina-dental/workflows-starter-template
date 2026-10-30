@@ -20,7 +20,7 @@ export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPay
 
     await step.do("forward-to-apps-script", async () => {
       const scriptUrl =
-        this.env.APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxH-Gm7-psKpEYJRl15rFPxAXEWmTiSL158GTG2tsIieqvEgW4ltTxpP3YMSe5926uy/exec";
+        this.env.APPS_SCRIPT_URL || "YOUR_GOOGLE_APPS_SCRIPT_EXEC_URL";
 
       const response = await fetch(scriptUrl, {
         method: "POST",
@@ -52,7 +52,7 @@ export default {
       const token = url.searchParams.get("hub.verify_token");
       const challenge = url.searchParams.get("hub.challenge");
 
-      const VERIFY_TOKEN = "platina_dental_call_blueee";
+      const VERIFY_TOKEN = "platina_webhook_secure_2026";
 
       if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) {
         return new Response(challenge, {
@@ -74,7 +74,7 @@ export default {
           });
         } else {
           const scriptUrl =
-            env.APPS_SCRIPT_URL || "https://script.google.com/macros/s/AKfycbxH-Gm7-psKpEYJRl15rFPxAXEWmTiSL158GTG2tsIieqvEgW4ltTxpP3YMSe5926uy/exec";
+            env.APPS_SCRIPT_URL || "YOUR_GOOGLE_APPS_SCRIPT_EXEC_URL";
 
           ctx.waitUntil(
             fetch(scriptUrl, {
