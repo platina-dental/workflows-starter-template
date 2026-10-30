@@ -7,6 +7,11 @@
   "observability": {
     "enabled": true
   }, 
+"assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
   "vars": {
     "APPS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbxH-Gm7-psKpEYJRl15rFPxAXEWmTiSL158GTG2tsIieqvEgW4ltTxpP3YMSe5926uy/exec",
     "VERIFY_TOKEN": "platina_webhook_secure_2026"
