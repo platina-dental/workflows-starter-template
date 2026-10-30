@@ -46,8 +46,9 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_sqlite_classes": ["WorkflowStatusDO"]
-		}
+			"deleted_classes": ["WorkflowStatusDO"]
+		},
+
 	],
 	"upload_source_maps": true
 }
