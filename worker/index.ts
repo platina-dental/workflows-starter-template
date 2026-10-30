@@ -1,125 +1,78 @@
-// Export the Workflow and Durable Object classes
-export { MyWorkflow } from "./workflow";
-export { WorkflowStatusDO } from "./durable-object";
+import { WorkflowEntrypoint } from "cloudflare:workers";
 
-/**
- * Main Worker fetch handler
- *
- * Handles API routes and WebSocket upgrade requests for workflow management:
- * - POST /api/workflow/start - Create new workflow instance
- * - GET /api/workflow/status/:id - Get workflow status
- * - POST /api/workflow/event/:id - Send events to workflow
- * - GET /ws - WebSocket connection for real-time updates
- */
+// 1. Workflow Definition: Handles asynchronous forwarding to Google Apps Script
+export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint {
+  async run(event, step) {
+    const { payload } = event.payload;
+
+    await step.do("forward-to-apps-script", async () => {
+      const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxH-Gm7-psKpEYJRl15rFPxAXEWmTiSL158GTG2tsIieqvEgW4ltTxpP3YMSe5926uy/exec"; // Paste your /exec URL
+
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Apps Script responded with status: ${response.status}`);
+      }
+
+      return await response.text();
+    });
+  }
+}
+
+// 2. HTTP Fetch Handler: Handles immediate Meta GET handshake and POST reception
 export default {
-	async fetch(request: Request, env: Env): Promise<Response> {
-		const url = new URL(request.url);
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
 
-		// API: Start a new workflow instance
-		if (url.pathname === "/api/workflow/start" && request.method === "POST") {
-			try {
-				const instance = await env.MY_WORKFLOW.create({
-					params: {
-						timestamp: Date.now(),
-					},
-				});
+    // Meta Webhook Verification Handshake (GET)
+    if (request.method === "GET") {
+      const mode = url.searchParams.get("hub.mode");
+      const token = url.searchParams.get("hub.verify_token");
+      const challenge = url.searchParams.get("hub.challenge");
 
-				return Response.json({
-					instanceId: instance.id,
-					message: "Workflow started successfully",
-				});
-			} catch {
-				return Response.json(
-					{ error: "Failed to start workflow" },
-					{ status: 500 },
-				);
-			}
-		}
+      const VERIFY_TOKEN = "platina_dental_call_blueee"; // Must match Meta input
 
-		// API: Get workflow status
-		if (url.pathname.startsWith("/api/workflow/status/")) {
-			const instanceId = url.pathname.split("/").pop();
-			if (!instanceId) {
-				return Response.json(
-					{ error: "Instance ID required" },
-					{ status: 400 },
-				);
-			}
+      if (mode === "subscribe" && token === VERIFY_TOKEN) {
+        return new Response(challenge, {
+          status: 200,
+          headers: { "Content-Type": "text/plain" }
+        });
+      }
+      return new Response("Forbidden", { status: 403 });
+    }
 
-			try {
-				const instance = await env.MY_WORKFLOW.get(instanceId);
-				const status = await instance.status();
-				return Response.json(status);
-			} catch {
-				return Response.json(
-					{ error: "Failed to get workflow status" },
-					{ status: 500 },
-				);
-			}
-		}
+    // Incoming WhatsApp Messages & Receipts (POST)
+    if (request.method === "POST") {
+      try {
+        const body = await request.json();
 
-		// API: Send event to workflow instance
-		if (
-			url.pathname.startsWith("/api/workflow/event/") &&
-			request.method === "POST"
-		) {
-			const instanceId = url.pathname.split("/").pop();
-			if (!instanceId) {
-				return Response.json(
-					{ error: "Instance ID required" },
-					{ status: 400 },
-				);
-			}
+        // Dispatch background processing to Workflow if configured
+        if (env.WHATSAPP_WORKFLOW) {
+          await env.WHATSAPP_WORKFLOW.create({
+            params: { payload: body }
+          });
+        } else {
+          // Fallback: direct background fetch without durable execution
+          ctx.waitUntil(
+            fetch("YOUR_GOOGLE_APPS_SCRIPT_EXEC_URL", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body)
+            })
+          );
+        }
 
-			try {
-				const body = (await request.json()) as {
-					approved: boolean;
-					comment?: string;
-				};
-				const instance = await env.MY_WORKFLOW.get(instanceId);
+        // Instantly signal Meta that the event was received
+        return new Response("EVENT_RECEIVED", { status: 200 });
+      } catch (err) {
+        return new Response("Invalid JSON", { status: 400 });
+      }
+    }
 
-				await instance.sendEvent({
-					type: "user-approval",
-					payload: body,
-				});
-
-				return Response.json({
-					success: true,
-					message: "Event sent successfully",
-				});
-			} catch {
-				return Response.json(
-					{ error: "Failed to send event" },
-					{ status: 500 },
-				);
-			}
-		}
-
-		// WebSocket: Connect to workflow status updates
-		if (url.pathname === "/ws") {
-			const instanceId = url.searchParams.get("instanceId");
-			if (!instanceId) {
-				return new Response("instanceId query parameter required", {
-					status: 400,
-				});
-			}
-
-			const upgradeHeader = request.headers.get("Upgrade");
-			if (upgradeHeader !== "websocket") {
-				return new Response("Expected Upgrade: websocket", { status: 426 });
-			}
-
-			try {
-				const doId = env.WORKFLOW_STATUS.idFromName(instanceId);
-				const stub = env.WORKFLOW_STATUS.get(doId);
-				return stub.fetch(request);
-			} catch {
-				return new Response("Failed to establish WebSocket connection", {
-					status: 500,
-				});
-			}
-		}
-
-		return Response.json({ error: "Not Found" }, { status: 404 });
-	},
-} satisfies ExportedHandler<Env>;
+    return new Response("Method not allowed", { status: 405 });
+  }
+};
