@@ -5,12 +5,25 @@ import {
 } from "cloudflare:workers";
 
 // Satisfies Cloudflare's existing Durable Object check from the starter template
+// worker/index.ts
+
 export class WorkflowStatusDO {
   state: DurableObjectState;
+
   constructor(state: DurableObjectState) {
     this.state = state;
   }
-  async fetch() {
+
+  // Satisfies the call in worker/workflow.ts line 30
+  async updateStep(stepName: string, status?: string): Promise<void> {
+    // No-op or record state
+  }
+
+  async setStatus(status: string): Promise<void> {
+    // No-op
+  }
+
+  async fetch(request: Request): Promise<Response> {
     return new Response("OK");
   }
 }
