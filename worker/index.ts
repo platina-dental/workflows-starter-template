@@ -4,6 +4,17 @@ import {
   type WorkflowEvent,
 } from "cloudflare:workers";
 
+// Satisfies Cloudflare's existing Durable Object check from the starter template
+export class WorkflowStatusDO {
+  state: DurableObjectState;
+  constructor(state: DurableObjectState) {
+    this.state = state;
+  }
+  async fetch() {
+    return new Response("OK");
+  }
+}
+
 type WorkflowPayload = {
   payload: Record<string, unknown>;
 };
@@ -11,10 +22,11 @@ type WorkflowPayload = {
 export interface Env {
   WHATSAPP_WORKFLOW?: Workflow;
   APPS_SCRIPT_URL?: string;
+  VERIFY_TOKEN?: string;
 }
 
-// 1. Workflow Definition
-export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPayload> {
+// Workflow Definition
+export class MyWorkflow extends WorkflowEntrypoint<Env, WorkflowPayload> {
   async run(event: WorkflowEvent<WorkflowPayload>, step: WorkflowStep): Promise<void> {
     const { payload } = event.payload;
 
@@ -37,7 +49,7 @@ export class WhatsAppWebhookWorkflow extends WorkflowEntrypoint<Env, WorkflowPay
   }
 }
 
-// 2. HTTP Fetch Handler
+// HTTP Fetch Handler
 export default {
   async fetch(
     request: Request,
@@ -52,9 +64,9 @@ export default {
       const token = url.searchParams.get("hub.verify_token");
       const challenge = url.searchParams.get("hub.challenge");
 
-      const VERIFY_TOKEN = "platina_webhook_secure_2026";
+      const verifyToken = env.VERIFY_TOKEN || "platina_webhook_secure_2026";
 
-      if (mode === "subscribe" && token === VERIFY_TOKEN && challenge) {
+      if (mode === "subscribe" && token === verifyToken && challenge) {
         return new Response(challenge, {
           status: 200,
           headers: { "Content-Type": "text/plain" },
