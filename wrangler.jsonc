@@ -1,35 +1,29 @@
+
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "workflows-starter-template",
+  "name": "platina-whatsapp-webhook",
   "main": "worker/index.ts",
-  "compatibility_date": "2025-10-08",
+  "compatibility_date": "2026-10-31",
 
   "observability": {
     "enabled": true
-  }, 
-"assets": {
-    "directory": "./dist",
-    "not_found_handling": "single-page-application",
-    "run_worker_first": true
   },
+
   "vars": {
     "APPS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbxH-Gm7-psKpEYJRl15rFPxAXEWmTiSL158GTG2tsIieqvEgW4ltTxpP3YMSe5926uy/exec",
-    "VERIFY_TOKEN": "platina_webhook_secure_2026"
-  },
+},
+
   "workflows": [
     {
-      "name": "workflows-starter-template",
+      "name": "platina-whatsapp-forwarder",
       "binding": "WHATSAPP_WORKFLOW",
-      "class_name": "WhatsAppWebhookWorkflow"
+      "class_name": "WhatsAppWebhookWorkflow",
+      "default_retention": {
+        "success_retention": "3 days",
+        "error_retention": "7 days"
+      }
     }
   ],
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "WORKFLOW_STATUS",
-        "class_name": "WorkflowStatusDO"
-      }
-    ]
-  },
+
   "upload_source_maps": true
 }
